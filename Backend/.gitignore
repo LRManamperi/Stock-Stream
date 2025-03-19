@@ -1,0 +1,42 @@
+# Node.js dependencies
+node_modules/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment files
+.env
+.env.*
+
+# Build output
+/dist
+/build
+/.next
+/out
+/public
+
+# Dependency directories
+jspm_packages/
+
+# VSCode directory
+.vscode/
+
+# MacOS specific
+.DS_Store
+
+# Windows specific
+Thumbs.db
+
+# IDE specific
+.idea/
+
+# System files
+*.swp
+*.swo
+
+# TypeScript compiled files
+*.tsbuildinfo
