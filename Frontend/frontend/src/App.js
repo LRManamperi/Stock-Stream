@@ -107,10 +107,13 @@ import React, { useEffect, useState } from "react";
 import StockChart from "./components/StockChart"; // Chart component
 import 'chartjs-adapter-date-fns';
 import { ApolloClient, InMemoryCache, gql, ApolloProvider } from '@apollo/client';
+import { darkTheme, lightTheme } from './theme';
+import Papa from 'papaparse';
 
+// Apollo Client setup
 const client = new ApolloClient({
   uri: 'http://localhost:3000/graphql',
-  cache: new InMemoryCache()
+  cache: new InMemoryCache(),
 });
 
 const GET_STOCK_DATA = gql`
@@ -132,8 +135,46 @@ const App = () => {
   const [stockData, setStockData] = useState([]);
   const [maxPrice, setMaxPrice] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [theme, setTheme] = useState("light");
+  const [priceThreshold, setPriceThreshold] = useState(1000);
 
-  // Fetch stock data from GraphQL
+  const toggleTheme = () => {
+    setTheme((prevTheme) => (prevTheme === "light" ? "dark" : "light"));
+  };
+
+  const themeStyles = theme === "light" ? lightTheme : darkTheme;
+
+  // Ticker component
+  const Ticker = () => (
+    <div style={styles.ticker}>
+      {stockData.slice(-5).map((stock, index) => (
+        <div key={index}>{`$${stock.price} at ${new Date(stock.timestamp).toLocaleTimeString()}`}</div>
+      ))}
+    </div>
+  );
+
+  // Export to CSV function
+  const exportToCSV = () => {
+    const csv = Papa.unparse(stockData);
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'stock-data.csv';
+    link.click();
+  };
+
+  // Check if stock price exceeds threshold
+  useEffect(() => {
+    if (stockData.length > 0) {
+      const lastPrice = stockData[stockData.length - 1].price;
+      if (lastPrice > priceThreshold) {
+        alert(`Stock price has exceeded your threshold: $${priceThreshold}`);
+      }
+    }
+  }, [stockData, priceThreshold]);
+
+  // Fetch stock data from GraphQL and WebSocket
   useEffect(() => {
     client
       .query({
@@ -161,6 +202,7 @@ const App = () => {
     ws.onopen = () => {
       console.log("Connected to WebSocket server");
       setIsConnected(true);
+      setLoading(false);
     };
 
     ws.onmessage = (event) => {
@@ -191,7 +233,7 @@ const App = () => {
 
   return (
     <ApolloProvider client={client}>
-      <div style={styles.container}>
+      <div style={{ ...styles.container, backgroundColor: themeStyles.background }}>
         <h1 style={styles.title}>StockStream 📈</h1>
         <div style={styles.status}>
           {isConnected ? (
@@ -208,6 +250,17 @@ const App = () => {
             <h3>Max Price in Last 10 minutes: ${maxPrice}</h3>
           </div>
         )}
+        <div style={styles.tickerContainer}>
+          <Ticker />
+        </div>
+        <div style={styles.buttonsContainer}>
+          <button onClick={toggleTheme} style={styles.button}>
+            Toggle Theme
+          </button>
+          <button onClick={exportToCSV} style={styles.button}>
+            Export to CSV
+          </button>
+        </div>
       </div>
     </ApolloProvider>
   );
@@ -221,7 +274,6 @@ const styles = {
     alignItems: "center",
     justifyContent: "center",
     height: "100vh",
-    backgroundColor: "#f7f7f7",
     fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
     color: "#333",
     padding: "20px",
@@ -231,17 +283,18 @@ const styles = {
     fontWeight: "bold",
     color: "#2C3E50",
     marginBottom: "20px",
+    textAlign: "center",
   },
   status: {
     marginBottom: "20px",
+    fontSize: "1.2rem",
+    textAlign: "center",
   },
   connected: {
     color: "#27ae60",
-    fontSize: "1.2rem",
   },
   connecting: {
     color: "#e67e22",
-    fontSize: "1.2rem",
   },
   chartContainer: {
     width: "100%",
@@ -251,12 +304,52 @@ const styles = {
     borderRadius: "8px",
     boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
     padding: "20px",
+    marginBottom: "20px",
+    
   },
   maxPriceContainer: {
     marginTop: "20px",
     padding: "10px",
     backgroundColor: "#f0f0f0",
     borderRadius: "8px",
+    width: "100%",
+    maxWidth: "400px",
+    textAlign: "center",
+  },
+  tickerContainer: {
+    marginTop: "20px",
+    padding: "10px",
+    backgroundColor: "#f8f8f8",
+    borderRadius: "8px",
+    width: "100%",
+    maxWidth: "400px",
+    textAlign: "center",
+  },
+  buttonsContainer: {
+    marginTop: "20px",
+    display: "flex",
+    justifyContent: "center",
+    width: "100%",
+  },
+  button: {
+    backgroundColor: "#3498db",
+    color: "#fff",
+    padding: "12px 25px",
+    margin: "0 15px",
+    border: "none",
+    borderRadius: "5px",
+    cursor: "pointer",
+    fontSize: "1rem",
+    transition: "background-color 0.3s ease",
+  },
+  buttonHover: {
+    backgroundColor: "#2980b9",
+  },
+  ticker: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    fontSize: "1rem",
   },
 };
 
