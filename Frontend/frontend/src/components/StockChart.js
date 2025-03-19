@@ -56,6 +56,18 @@ const StockChart = ({ stockData }) => {
         },
       },
     },
+    plugins: {
+        zoom: {
+          pan: {
+            enabled: true,
+            mode: 'xy',
+          },
+          zoom: {
+            enabled: true,
+            mode: 'xy',
+          },
+        },
+      },
   };
 
   return <Line ref={chartRef} data={data} options={options} />;
