@@ -31,3 +31,18 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# Kafka & Logs
+kafka-logs/
+zookeeper-logs/
+logs/
+*.log
+
+# Docker
+docker-compose.override.yml
+*.pid
+.env
+
+# Nginx
+nginx/logs/
+nginx/conf.d/*.swp
