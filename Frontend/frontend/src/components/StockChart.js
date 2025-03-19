@@ -1,32 +1,64 @@
-import React from "react";
-import { gql, useSubscription } from "@apollo/client";
-import { LineChart, Line, XAxis, YAxis, Tooltip } from "recharts";
+import React, { useRef, useEffect } from "react";
+import { Line } from "react-chartjs-2";
+import Chart from "chart.js/auto"; // Import Chart.js
 
-const STOCK_SUBSCRIPTION = gql`
-  subscription StockPriceUpdates($symbol: String!) {
-    stockPriceUpdates(symbol: $symbol) {
-      price
+const StockChart = ({ stockData }) => {
+  const chartRef = useRef(null);
+
+  useEffect(() => {
+    if (chartRef.current) {
+      // Update chart data when stockData changes
+      const chartInstance = chartRef.current.chartInstance;
+
+      if (chartInstance) {
+        // Update chart data
+        chartInstance.data.datasets[0].data = stockData.map((dataPoint) => ({
+          x: dataPoint.timestamp, // x-axis is the timestamp
+          y: dataPoint.price, // y-axis is the price
+        }));
+        chartInstance.update();
+      }
     }
-  }
-`;
+  }, [stockData]);
 
-const StockChart = ({ symbol }) => {
-  const { data } = useSubscription(STOCK_SUBSCRIPTION, {
-    variables: { symbol },
-  });
+  const data = {
+    datasets: [
+      {
+        label: "Stock Price",
+        data: stockData.map((dataPoint) => ({
+          x: dataPoint.timestamp, // x-axis is the timestamp
+          y: dataPoint.price, // y-axis is the price
+        })),
+        fill: false,
+        borderColor: "rgba(75,192,192,1)",
+        tension: 0.1,
+      },
+    ],
+  };
 
-  const stockData = data
-    ? [{ name: symbol, price: data.stockPriceUpdates.price }]
-    : [];
+  const options = {
+    responsive: true,
+    scales: {
+      x: {
+        type: "time", // Use time scale for x-axis
+        time: {
+          unit: "minute", // Adjust the unit depending on your data frequency
+        },
+        title: {
+          display: true,
+          text: "Time",
+        },
+      },
+      y: {
+        title: {
+          display: true,
+          text: "Price",
+        },
+      },
+    },
+  };
 
-  return (
-    <LineChart width={400} height={300} data={stockData}>
-      <XAxis dataKey="name" />
-      <YAxis />
-      <Tooltip />
-      <Line type="monotone" dataKey="price" stroke="#8884d8" />
-    </LineChart>
-  );
+  return <Line ref={chartRef} data={data} options={options} />;
 };
 
 export default StockChart;
